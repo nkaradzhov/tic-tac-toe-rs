@@ -1,4 +1,4 @@
-use std::{fmt::Display, str::pattern::Pattern};
+use std::fmt::Display;
 
 struct GameState {
     board: [[CellState; 3]; 3],
@@ -11,12 +11,25 @@ enum Turn {
     O,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum CellState {
     Empty,
     X,
     O,
 }
+
+impl TryFrom<&CellState> for Turn {
+    type Error = String;
+
+    fn try_from(value: &CellState) -> Result<Self, Self::Error> {
+        match value {
+            CellState::Empty => Err("could not convert".to_string()),
+            CellState::X => Ok(Turn::X),
+            CellState::O => Ok(Turn::O)
+        }
+    }
+}
+
 
 impl Display for CellState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -31,6 +44,7 @@ impl Display for CellState {
         )
     }
 }
+
 
 fn main() {
     println!("Hello, RC!");
@@ -51,16 +65,30 @@ fn main() {
 }
 
 fn check_winner(game_state: &GameState) -> Option<Turn> {
-    let winning_patterns = [[(0, 0), (0, 1), (0, 2)]];
+    let winning_patterns = [
+        [(0, 0), (0, 1), (0, 2)]
+    ];
 
-    let mut result = None;
+    let mut result: Option<Turn> = None;
 
     for pattern in winning_patterns {
-        pattern.iter().all(|(r,c )| {
-            
-        })
+        let mut cells_in_pattern = vec![];
         for (x, y) in pattern {
-            
+            cells_in_pattern.push(game_state.board[x][y]);
+        }
+
+        // {X, X, X} -> set(X)
+        // set has size 1 and is not blank, take first, and that is the winner
+
+        vec![CellState::X, CellState::O].iter().for_each(|cell_state| {
+            if cells_in_pattern.iter().all(|state| state == cell_state) {
+                if let Ok(turn) = Turn::try_from(cell_state) {
+                    result = Some(turn);
+                }
+            }
+        });
+
+        if result.is_some() {
             break
         }
     }
